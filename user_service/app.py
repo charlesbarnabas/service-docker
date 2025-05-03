@@ -1,13 +1,10 @@
-# user_service/app.py
 import sqlite3
 import os
 import contextlib
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import the CORS extension
 
 # --- Inisialisasi Aplikasi Flask ---
 app = Flask(__name__)
-CORS(app)  # Aktifkan CORS untuk seluruh aplikasi
 # Explain: Mendefinisikan nama file database KHUSUS untuk layanan pengguna.
 DB_NAME = "user_data.db"
 # Explain: Membuat path lengkap ke file database di dalam direktori layanan ini.
@@ -90,5 +87,5 @@ def get_user(user_id):
 if __name__ == '__main__':
     init_db() # Inisialisasi DB saat start
     # Explain: host='0.0.0.0' agar bisa diakses dari layanan lain di mesin yang sama.
-    #          Port 5001 untuk layanan pengguna.
+    #          Port 5001 untuk layanan pengguna.
     app.run(host='0.0.0.0', port=5001, debug=True)

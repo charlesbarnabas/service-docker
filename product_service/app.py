@@ -1,13 +1,10 @@
-# product_service/app.py
 import sqlite3
 import os
 import contextlib
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import the CORS extension
 
 # --- Inisialisasi Aplikasi Flask ---
 app = Flask(__name__)
-CORS(app)  # Enable CORS for the entire app
 # Explain: Mendefinisikan nama file database KHUSUS untuk layanan produk.
 DB_NAME = "product_data.db"
 # Explain: Membuat path lengkap ke file database di dalam direktori layanan ini.
