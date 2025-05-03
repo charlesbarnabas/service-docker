@@ -1,0 +1,101 @@
+<!-- frontend/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Integration System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Service Integration System</h1>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/users">Users</a></li>
+            <li><a href="/products">Products</a></li>
+            <li><a href="/orders">Orders</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>Welcome to the Service Integration System</h2>
+            <p>This application demonstrates a microservice architecture with three independent services:</p>
+            <ul>
+                <li><strong>User Service:</strong> Manages user data.</li>
+                <li><strong>Product Service:</strong> Manages product data.</li>
+                <li><strong>Order Service:</strong> Creates orders by consuming data from the other services.</li>
+            </ul>
+            <p>Use the navigation above to interact with each service.</p>
+        </div>
+
+        <div class="card">
+            <h2>Service Status</h2>
+            <div id="service-status">
+                <p>Loading service status...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check the status of each service
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusDiv = document.getElementById('service-status');
+            statusDiv.innerHTML = '<div class="loading">Checking service status...</div>';
+
+            const services = [
+                { name: 'User Service', url: '/api/users' },
+                { name: 'Product Service', url: '/api/products' },
+                { name: 'Order Service', url: '/api/orders' }
+            ];
+
+            const statusTable = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            thead.innerHTML = `
+                <tr>
+                    <th>Service</th>
+                    <th>Status</th>
+                </tr>
+            `;
+
+            statusTable.appendChild(thead);
+            statusTable.appendChild(tbody);
+
+            services.forEach(service => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${service.name}</td>
+                    <td id="${service.name.replace(' ', '-').toLowerCase()}-status">Checking...</td>
+                `;
+                tbody.appendChild(row);
+
+                // Check service status
+                fetch(service.url)
+                    .then(response => {
+                        const statusCell = document.getElementById(`${service.name.replace(' ', '-').toLowerCase()}-status`);
+                        if (response.ok) {
+                            statusCell.innerHTML = '<span class="status-badge status-completed">Online</span>';
+                        } else {
+                            statusCell.innerHTML = '<span class="status-badge status-pending">Issues Detected</span>';
+                        }
+                    })
+                    .catch(error => {
+                        const statusCell = document.getElementById(`${service.name.replace(' ', '-').toLowerCase()}-status`);
+                        statusCell.innerHTML = '<span class="status-badge" style="background-color: #f44336; color: white;">Offline</span>';
+                    });
+            });
+
+            statusDiv.innerHTML = '';
+            statusDiv.appendChild(statusTable);
+        });
+    </script>
+</body>
+</html>
