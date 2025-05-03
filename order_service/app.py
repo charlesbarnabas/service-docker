@@ -4,11 +4,9 @@ import os
 import contextlib
 import requests # Library untuk membuat HTTP requests
 from flask import Flask, request, jsonify
-from flask_cors import CORS # Import CORS
 
 # --- Inisialisasi Aplikasi Flask ---
 app = Flask(__name__)
-CORS(app) # Aktifkan CORS
 # Explain: Mendefinisikan nama file database KHUSUS untuk layanan pesanan.
 DB_NAME = "order_data.db"
 # Explain: Membuat path lengkap ke file database di dalam direktori layanan ini.
@@ -56,7 +54,7 @@ def init_db():
 
 # --- Fungsi Helper untuk Mengambil Detail dari Provider ---
 # Explain: Fungsi ini mirip validate_user, tapi tujuannya mengambil detail
-#         lengkap user jika tersedia saat melihat detail order.
+#          lengkap user jika tersedia saat melihat detail order.
 def fetch_user_details(user_id):
     """Mengambil detail pengguna dari User Provider."""
     url = f"{USER_PROVIDER_URL}/users/{user_id}"
@@ -71,7 +69,7 @@ def fetch_user_details(user_id):
         return None # Kembalikan None jika gagal mengambil detail
 
 # Explain: Fungsi ini mirip validate_product, tapi tujuannya mengambil detail
-#         lengkap produk jika tersedia saat melihat detail order.
+#          lengkap produk jika tersedia saat melihat detail order.
 def fetch_product_details(product_id):
     """Mengambil detail produk dari Product Provider."""
     url = f"{PRODUCT_PROVIDER_URL}/products/{product_id}"
@@ -114,8 +112,8 @@ def validate_product(product_id):
         response.raise_for_status()
         product_data = response.json()
         if 'price' not in product_data or not isinstance(product_data['price'], (int, float)):
-            app.logger.error(f"Respons produk tidak valid dari {url}: {product_data}")
-            return None, "Respons produk tidak valid (harga hilang/salah tipe)"
+             app.logger.error(f"Respons produk tidak valid dari {url}: {product_data}")
+             return None, "Respons produk tidak valid (harga hilang/salah tipe)"
         return product_data, None # Sukses: kembalikan data produk, error = None
     except requests.exceptions.Timeout:
         msg = f"Timeout saat menghubungi Product Provider di {url}"
@@ -217,10 +215,10 @@ def get_order_details(order_id):
         # Explain: Langkah 3 - Coba ambil detail produk dari Product Provider.
         product_details = fetch_product_details(order_data['product_id'])
         if product_details:
-            order_details['product_details'] = product_details
+             order_details['product_details'] = product_details
         else:
-            # Jika gagal ambil detail, tambahkan indikator.
-            order_details['product_details'] = {"error": "Gagal mengambil detail produk"}
+             # Jika gagal ambil detail, tambahkan indikator.
+             order_details['product_details'] = {"error": "Gagal mengambil detail produk"}
 
         # Explain: Kembalikan gabungan data pesanan, detail user, dan detail produk.
         return jsonify(order_details), 200 # OK
