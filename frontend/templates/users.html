@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Service Integration System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>User Management</h1>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/users">Users</a></li>
+            <li><a href="/products">Products</a></li>
+            <li><a href="/orders">Orders</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="user-list">User List</div>
+            <div class="tab" data-tab="create-user">Create User</div>
+        </div>
+
+        <!-- User List Tab -->
+        <div class="tab-content active" id="user-list">
+            <div class="card">
+                <h2>User List</h2>
+                <div id="user-list-container">
+                    <p class="loading">Loading users...</p>
+                </div>
+            </div>
+
+            <div class="card" id="user-detail-card" style="display: none;">
+                <h2>User Details</h2>
+                <div id="user-detail-container"></div>
+            </div>
+        </div>
+
+        <!-- Create User Tab -->
+        <div class="tab-content" id="create-user">
+            <div class="card">
+                <h2>Create New User</h2>
+                <form id="create-user-form">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <button type="submit">Create User</button>
+                </form>
+                <div id="create-user-message" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            // Load user list initially
+            fetchUsers();
+
+            // Create user form submission
+            const createUserForm = document.getElementById('create-user-form');
+            createUserForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                createUser();
+            });
+        });
+
+        // Fetch users from API
+        function fetchUsers() {
+            const userListContainer = document.getElementById('user-list-container');
+            userListContainer.innerHTML = '<p class="loading">Loading users...</p>';
+
+            fetch('/api/users')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch users');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.length === 0) {
+                        userListContainer.innerHTML = '<p>No users found. Create a new user to get started.</p>';
+                        return;
+                    }
+
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                        </tbody>
+                    `;
+
+                    userListContainer.innerHTML = '';
+                    userListContainer.appendChild(table);
+
+                    const tbody = document.getElementById('user-table-body');
+                    data.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>
+                                <button class="action-btn" onclick="viewUserDetails(${user.id})">View</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    userListContainer.innerHTML = `
+                        <p class="error">Error: ${error.message}</p>
+                        <p>The User Service may be offline. Please check your connection and try again.</p>
+                    `;
+                });
+        }
+
+        // View user details
+        function viewUserDetails(userId) {
+            const detailCard = document.getElementById('user-detail-card');
+            const detailContainer = document.getElementById('user-detail-container');
+            detailContainer.innerHTML = '<p class="loading">Loading user details...</p>';
+            detailCard.style.display = 'block';
+
+            fetch(`/api/users/${userId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch user details');
+                    }
+                    return response.json();
+                })
+                .then(user => {
+                    detailContainer.innerHTML = `
+                        <div>
+                            <p><strong>ID:</strong> ${user.id}</p>
+                            <p><strong>Name:</strong> ${user.name}</p>
+                            <p><strong>Email:</strong> ${user.email}</p>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    detailContainer.innerHTML = `
+                        <p class="error">Error: ${error.message}</p>
+                        <p>Failed to retrieve user details.</p>
+                    `;
+                });
+        }
+
+        // Create a new user
+        function createUser() {
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const messageDiv = document.getElementById('create-user-message');
+
+            const userData = {
+                name: nameInput.value,
+                email: emailInput.value
+            };
+
+            messageDiv.innerHTML = '<p class="loading">Creating user...</p>';
+
+            fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to create user');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                messageDiv.innerHTML = `
+                    <p class="success">User created successfully!</p>
+                    <p><strong>ID:</strong> ${data.id}</p>
+                    <p><strong>Name:</strong> ${data.name}</p>
+                    <p><strong>Email:</strong> ${data.email}</p>
+                `;
+                nameInput.value = '';
+                emailInput.value = '';
+
+                // Refresh user list
+                fetchUsers();
+
+                // Switch to user list tab after 2 seconds
+                setTimeout(() => {
+                    document.querySelector('.tab[data-tab="user-list"]').click();
+                }, 2000);
+            })
+            .catch(error => {
+                messageDiv.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                    <p>Please try again.</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
