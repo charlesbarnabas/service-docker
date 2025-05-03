@@ -1,0 +1,230 @@
+<!-- frontend/templates/products.html --><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management - Service Integration System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Product Management</h1>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/users">Users</a></li>
+            <li><a href="/products">Products</a></li>
+            <li><a href="/orders">Orders</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="product-list">Product List</div>
+            <div class="tab" data-tab="create-product">Create Product</div>
+        </div>
+
+<!-- Product List Tab --><div class="tab-content active" id="product-list">
+            <div class="card">
+                <h2>Product List</h2>
+                <div id="product-list-container">
+                    <p class="loading">Loading products...</p>
+                </div>
+            </div>
+
+            <div class="card" id="product-detail-card" style="display: none;">
+                <h2>Product Details</h2>
+                <div id="product-detail-container"></div>
+            </div>
+        </div>
+
+<!-- Create Product Tab --><div class="tab-content" id="create-product">
+            <div class="card">
+                <h2>Create New Product</h2>
+                <form id="create-product-form">
+                    <div class="form-group">
+                        <label for="product-name">Product Name:</label>
+                        <input type="text" id="product-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Price:</label>
+                        <input type="number" id="price" name="price" min="0" step="0.01" required>
+                    </div>
+                    <button type="submit">Create Product</button>
+                </form>
+                <div id="create-product-message" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// Tab switchingdocument.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+
+// Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+
+// Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+// Load product list initiallyfetchProducts();
+
+// Create product form submissionconst createProductForm = document.getElementById('create-product-form');
+            createProductForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                createProduct();
+            });
+        });
+
+// Fetch products from APIfunction fetchProducts() {
+            const productListContainer = document.getElementById('product-list-container');
+            productListContainer.innerHTML = '<p class="loading">Loading products...</p>';
+
+            fetch('/api/products')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch products');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.length === 0) {
+                        productListContainer.innerHTML = '<p>No products found. Create a new product to get started.</p>';
+                        return;
+                    }
+
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table-body">
+                        </tbody>
+                    `;
+
+                    productListContainer.innerHTML = '';
+                    productListContainer.appendChild(table);
+
+                    const tbody = document.getElementById('product-table-body');
+                    data.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${product.id}</td>
+                            <td>${product.name}</td>
+                            <td>Rp ${parseFloat(product.price).toLocaleString('id-ID')}</td>
+                            <td>
+                                <button class="action-btn" onclick="viewProductDetails(${product.id})">View</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    productListContainer.innerHTML = `
+                        <p class="error">Error: ${error.message}</p>
+                        <p>The Product Service may be offline. Please check your connection and try again.</p>
+                    `;
+                });
+        }
+
+// View product detailsfunction viewProductDetails(productId) {
+            const detailCard = document.getElementById('product-detail-card');
+            const detailContainer = document.getElementById('product-detail-container');
+            detailContainer.innerHTML = '<p class="loading">Loading product details...</p>';
+            detailCard.style.display = 'block';
+
+            fetch(`/api/products/${productId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch product details');
+                    }
+                    return response.json();
+                })
+                .then(product => {
+                    detailContainer.innerHTML = `
+                        <div>
+                            <p><strong>ID:</strong> ${product.id}</p>
+                            <p><strong>Name:</strong> ${product.name}</p>
+                            <p><strong>Price:</strong> Rp ${parseFloat(product.price).toLocaleString('id-ID')}</p>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    detailContainer.innerHTML = `
+                        <p class="error">Error: ${error.message}</p>
+                        <p>Failed to retrieve product details.</p>
+                    `;
+                });
+        }
+
+// Create a new productfunction createProduct() {
+            const nameInput = document.getElementById('product-name');
+            const priceInput = document.getElementById('price');
+            const messageDiv = document.getElementById('create-product-message');
+
+            const productData = {
+                name: nameInput.value,
+                price: parseFloat(priceInput.value)
+            };
+
+            messageDiv.innerHTML = '<p class="loading">Creating product...</p>';
+
+            fetch('/api/products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(productData),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to create product');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                messageDiv.innerHTML = `
+                    <p class="success">Product created successfully!</p>
+                    <p><strong>ID:</strong> ${data.id}</p>
+                    <p><strong>Name:</strong> ${data.name}</p>
+                    <p><strong>Price:</strong> Rp ${parseFloat(data.price).toLocaleString('id-ID')}</p>
+                `;
+                nameInput.value = '';
+                priceInput.value = '';
+
+// Refresh product listfetchProducts();
+
+// Switch to product list tab after 2 secondssetTimeout(() => {
+                    document.querySelector('.tab[data-tab="product-list"]').click();
+                }, 2000);
+            })
+            .catch(error => {
+                messageDiv.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                    <p>Please try again.</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
