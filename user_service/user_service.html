@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Service UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="container max-w-2xl mx-auto bg-white shadow-md rounded-lg p-8" id="user-container">
+        </div>
+
+    <script>
+        function createUserServiceUI(containerId) {
+            const container = document.getElementById(containerId);
+
+            const createUserForm = document.createElement('div');
+            createUserForm.innerHTML = `
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Create User</h2>
+                <div class="mb-4">
+                    <label for="userName" class="block text-gray-700 text-sm font-bold mb-2">Name:</label>
+                    <input type="text" id="userName" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="userEmail" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                    <input type="email" id="userEmail" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="form-actions">
+                    <button id="createUserButton"
+                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Create User
+                    </button>
+                </div>
+                <div id="userResult" class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200"></div>
+            `;
+            container.appendChild(createUserForm);
+
+            const getUserForm = document.createElement('div');
+            getUserForm.innerHTML = `
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Get User Details</h2>
+                <div class="mb-4">
+                    <label for="userId" class="block text-gray-700 text-sm font-bold mb-2">User ID:</label>
+                    <input type="number" id="userId" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="form-actions">
+                    <button id="getUserButton"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Get Details
+                    </button>
+                </div>
+                <div id="userDetails" class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200"></div>
+            `;
+            container.appendChild(getUserForm);
+
+
+
+            const userResultDiv = document.getElementById('userResult');
+            const userDetailsDiv = document.getElementById('userDetails');
+            const apiUrlUser = 'http://127.0.0.1:5001/users'; // Corrected user API URL
+
+            document.getElementById('createUserButton').addEventListener('click', createUser);
+            document.getElementById('getUserButton').addEventListener('click', getUserDetails);
+
+
+            async function createUser() {
+                const userName = document.getElementById('userName').value;
+                const userEmail = document.getElementById('userEmail').value;
+
+                const userData = {
+                    name: userName,
+                    email: userEmail
+                };
+
+                try {
+                    const response = await fetch(apiUrlUser, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(userData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        userResultDiv.innerHTML = `<p class="text-green-600 font-semibold">User Created Successfully!</p><pre class="bg-gray-50 p-2 rounded-md overflow-auto text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                        userResultDiv.classList.remove('error');
+                    } else {
+                        userResultDiv.innerHTML = `<p class="text-red-600 font-semibold">Error creating user: ${data.error || response.statusText}</p>`;
+                        userResultDiv.classList.add('error');
+                    }
+                } catch (error) {
+                    userResultDiv.innerHTML = `<p class="text-red-600 font-semibold">Network error: ${error.message}</p>`;
+                    userResultDiv.classList.add('error');
+                }
+            }
+
+            async function getUserDetails() {
+                const userId = document.getElementById('userId').value;
+                const detailsUrl = `${apiUrlUser}/${userId}`;
+
+                try {
+                    const response = await fetch(detailsUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        userDetailsDiv.innerHTML = `<h3 class="text-lg font-semibold text-gray-800 mb-2">User Details:</h3><pre class="bg-gray-50 p-2 rounded-md overflow-auto text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                        userDetailsDiv.classList.remove('error');
+                    } else {
+                        userDetailsDiv.innerHTML = `<p class="text-red-600 font-semibold">Error fetching user details: ${data.error || response.statusText}</p>`;
+                        userDetailsDiv.classList.add('error');
+                    }
+                } catch (error) {
+                    userDetailsDiv.innerHTML = `<p class="text-red-600 font-semibold">Network error: ${error.message}</p>`;
+                    userDetailsDiv.classList.add('error');
+                }
+            }
+        }
+
+        createUserServiceUI('user-container');
+    </script>
+</body>
+</html>

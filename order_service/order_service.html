@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Service UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="container max-w-2xl mx-auto bg-white shadow-md rounded-lg p-8" id="order-container">
+        </div>
+
+    <script>
+        function createOrderServiceUI(containerId) {
+            const container = document.getElementById(containerId);
+
+            const createOrderForm = document.createElement('div');
+            createOrderForm.innerHTML = `
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Create Order</h2>
+                <div class="mb-4">
+                    <label for="userId" class="block text-gray-700 text-sm font-bold mb-2">User ID:</label>
+                    <input type="number" id="userId" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="productId" class="block text-gray-700 text-sm font-bold mb-2">Product ID:</label>
+                    <input type="number" id="productId" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="quantity" class="block text-gray-700 text-sm font-bold mb-2">Quantity:</label>
+                    <input type="number" id="quantity" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="form-actions">
+                    <button id="createOrderButton"
+                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Create Order
+                    </button>
+                </div>
+                <div id="orderResult" class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200"></div>
+            `;
+            container.appendChild(createOrderForm);
+
+            const getOrderForm = document.createElement('div');
+            getOrderForm.innerHTML = `
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Get Order Details</h2>
+                <div class="mb-4">
+                    <label for="orderId" class="block text-gray-700 text-sm font-bold mb-2">Order ID:</label>
+                    <input type="number" id="orderId" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="form-actions">
+                    <button id="getOrderButton"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Get Details
+                    </button>
+                </div>
+                <div id="orderDetails" class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200"></div>
+            `;
+            container.appendChild(getOrderForm);
+
+            const orderResultDiv = document.getElementById('orderResult');
+            const orderDetailsDiv = document.getElementById('orderDetails');
+            const apiUrlOrder = 'http://127.0.0.1:5003/orders';
+
+            document.getElementById('createOrderButton').addEventListener('click', createOrder);
+            document.getElementById('getOrderButton').addEventListener('click', getOrderDetails);
+
+            async function createOrder() {
+                const userId = document.getElementById('userId').value;
+                const productId = document.getElementById('productId').value;
+                const quantity = parseInt(document.getElementById('quantity').value);
+
+                const orderData = {
+                    user_id: userId,
+                    product_id: productId,
+                    quantity: quantity
+                };
+
+                try {
+                    const response = await fetch(apiUrlOrder, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(orderData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        orderResultDiv.innerHTML = `<p class="text-green-600 font-semibold">Order Created Successfully!</p><pre class="bg-gray-50 p-2 rounded-md overflow-auto text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                        orderResultDiv.classList.remove('error');
+                    } else {
+                        orderResultDiv.innerHTML = `<p class="text-red-600 font-semibold">Error creating order: ${data.error || response.statusText}</p>`;
+                        orderResultDiv.classList.add('error');
+                    }
+                } catch (error) {
+                    orderResultDiv.innerHTML = `<p class="text-red-600 font-semibold">Network error: ${error.message}</p>`;
+                    orderResultDiv.classList.add('error');
+                }
+            }
+
+            async function getOrderDetails() {
+                const orderId = document.getElementById('orderId').value;
+                const detailsUrl = `${apiUrlOrder}/${orderId}`;
+
+                try {
+                    const response = await fetch(detailsUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        orderDetailsDiv.innerHTML = `<h3 class="text-lg font-semibold text-gray-800 mb-2">Order Details:</h3><pre class="bg-gray-50 p-2 rounded-md overflow-auto text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                        orderDetailsDiv.classList.remove('error');
+                    } else {
+                        orderDetailsDiv.innerHTML = `<p class="text-red-600 font-semibold">Error fetching order details: ${data.error || response.statusText}</p>`;
+                        orderDetailsDiv.classList.add('error');
+                    }
+                } catch (error) {
+                    orderDetailsDiv.innerHTML = `<p class="text-red-600 font-semibold">Network error: ${error.message}</p>`;
+                    orderDetailsDiv.classList.add('error');
+                }
+            }
+        }
+
+        createOrderServiceUI('order-container');
+    </script>
+</body>
+</html>

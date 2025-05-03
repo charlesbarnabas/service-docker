@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Service UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="container max-w-2xl mx-auto bg-white shadow-md rounded-lg p-8" id="product-container">
+        </div>
+
+    <script>
+        function createProductServiceUI(containerId) {
+            const container = document.getElementById(containerId);
+
+            const createProductForm = document.createElement('div');
+            createProductForm.innerHTML = `
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Create Product</h2>
+                <div class="mb-4">
+                    <label for="productName" class="block text-gray-700 text-sm font-bold mb-2">Name:</label>
+                    <input type="text" id="productName" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="productPrice" class="block text-gray-700 text-sm font-bold mb-2">Price:</label>
+                    <input type="number" id="productPrice" min="0" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="form-actions">
+                    <button id="createProductButton"
+                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Create Product
+                    </button>
+                </div>
+                <div id="productResult" class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200"></div>
+            `;
+            container.appendChild(createProductForm);
+
+            const getProductForm = document.createElement('div');
+            getProductForm.innerHTML = `
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Get Product Details</h2>
+                <div class="mb-4">
+                    <label for="productId" class="block text-gray-700 text-sm font-bold mb-2">Product ID:</label>
+                    <input type="number" id="productId" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="form-actions">
+                    <button id="getProductButton"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Get Details
+                    </button>
+                </div>
+                <div id="productDetails" class="mt-4 p-4 bg-gray-100 rounded-md border border-gray-200"></div>
+            `;
+            container.appendChild(getProductForm);
+
+
+
+            const productResultDiv = document.getElementById('productResult');
+            const productDetailsDiv = document.getElementById('productDetails');
+            const apiUrlProduct = 'http://127.0.0.1:5002/products'; // Corrected API URL
+
+            document.getElementById('createProductButton').addEventListener('click', createProduct);
+            document.getElementById('getProductButton').addEventListener('click', getProductDetails);
+
+
+            async function createProduct() {
+                const productName = document.getElementById('productName').value;
+                const productPrice = document.getElementById('productPrice').value;
+
+                const productData = {
+                    name: productName,
+                    price: parseFloat(productPrice)
+                };
+
+                try {
+                    const response = await fetch(apiUrlProduct, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(productData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        productResultDiv.innerHTML = `<p class="text-green-600 font-semibold">Product Created Successfully!</p><pre class="bg-gray-50 p-2 rounded-md overflow-auto text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                        productResultDiv.classList.remove('error');
+                    } else {
+                        productResultDiv.innerHTML = `<p class="text-red-600 font-semibold">Error creating product: ${data.error || response.statusText}</p>`;
+                        productResultDiv.classList.add('error');
+                    }
+                } catch (error) {
+                    productResultDiv.innerHTML = `<p class="text-red-600 font-semibold">Network error: ${error.message}</p>`;
+                    productResultDiv.classList.add('error');
+                }
+            }
+
+            async function getProductDetails() {
+                const productId = document.getElementById('productId').value;
+                const detailsUrl = `${apiUrlProduct}/${productId}`;
+
+                try {
+                    const response = await fetch(detailsUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        productDetailsDiv.innerHTML = `<h3 class="text-lg font-semibold text-gray-800 mb-2">Product Details:</h3><pre class="bg-gray-50 p-2 rounded-md overflow-auto text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                        productDetailsDiv.classList.remove('error');
+                    } else {
+                        productDetailsDiv.innerHTML = `<p class="text-red-600 font-semibold">Error fetching product details: ${data.error || response.statusText}</p>`;
+                        productDetailsDiv.classList.add('error');
+                    }
+                } catch (error) {
+                    productDetailsDiv.innerHTML = `<p class="text-red-600 font-semibold">Network error: ${error.message}</p>`;
+                    productDetailsDiv.classList.add('error');
+                }
+            }
+        }
+
+        createProductServiceUI('product-container');
+    </script>
+</body>
+</html>
