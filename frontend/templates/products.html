@@ -1,4 +1,4 @@
-<!-- frontend/templates/products.html --><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -28,7 +28,8 @@
             <div class="tab" data-tab="create-product">Create Product</div>
         </div>
 
-<!-- Product List Tab --><div class="tab-content active" id="product-list">
+        <!-- Product List Tab -->
+        <div class="tab-content active" id="product-list">
             <div class="card">
                 <h2>Product List</h2>
                 <div id="product-list-container">
@@ -42,7 +43,8 @@
             </div>
         </div>
 
-<!-- Create Product Tab --><div class="tab-content" id="create-product">
+        <!-- Create Product Tab -->
+        <div class="tab-content" id="create-product">
             <div class="card">
                 <h2>Create New Product</h2>
                 <form id="create-product-form">
@@ -62,7 +64,8 @@
     </div>
 
     <script>
-// Tab switchingdocument.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
 
@@ -70,26 +73,29 @@
                 tab.addEventListener('click', () => {
                     const tabId = tab.getAttribute('data-tab');
 
-// Remove active class from all tabs
+                    // Remove active class from all tabs
                     tabs.forEach(t => t.classList.remove('active'));
                     tabContents.forEach(tc => tc.classList.remove('active'));
 
-// Add active class to clicked tab and corresponding content
+                    // Add active class to clicked tab and corresponding content
                     tab.classList.add('active');
                     document.getElementById(tabId).classList.add('active');
                 });
             });
 
-// Load product list initiallyfetchProducts();
+            // Load product list initially
+            fetchProducts();
 
-// Create product form submissionconst createProductForm = document.getElementById('create-product-form');
+            // Create product form submission
+            const createProductForm = document.getElementById('create-product-form');
             createProductForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 createProduct();
             });
         });
 
-// Fetch products from APIfunction fetchProducts() {
+        // Fetch products from API
+        function fetchProducts() {
             const productListContainer = document.getElementById('product-list-container');
             productListContainer.innerHTML = '<p class="loading">Loading products...</p>';
 
@@ -145,7 +151,8 @@
                 });
         }
 
-// View product detailsfunction viewProductDetails(productId) {
+        // View product details
+        function viewProductDetails(productId) {
             const detailCard = document.getElementById('product-detail-card');
             const detailContainer = document.getElementById('product-detail-container');
             detailContainer.innerHTML = '<p class="loading">Loading product details...</p>';
@@ -175,7 +182,8 @@
                 });
         }
 
-// Create a new productfunction createProduct() {
+        // Create a new product
+        function createProduct() {
             const nameInput = document.getElementById('product-name');
             const priceInput = document.getElementById('price');
             const messageDiv = document.getElementById('create-product-message');
@@ -212,9 +220,11 @@
                 nameInput.value = '';
                 priceInput.value = '';
 
-// Refresh product listfetchProducts();
+                // Refresh product list
+                fetchProducts();
 
-// Switch to product list tab after 2 secondssetTimeout(() => {
+                // Switch to product list tab after 2 seconds
+                setTimeout(() => {
                     document.querySelector('.tab[data-tab="product-list"]').click();
                 }, 2000);
             })
