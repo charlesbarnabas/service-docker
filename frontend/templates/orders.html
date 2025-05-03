@@ -1,4 +1,4 @@
-<!-- frontend/templates/orders.html --><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -28,7 +28,8 @@
             <div class="tab" data-tab="create-order">Create Order</div>
         </div>
 
-<!-- Order List Tab --><div class="tab-content active" id="order-list">
+        <!-- Order List Tab -->
+        <div class="tab-content active" id="order-list">
             <div class="card">
                 <h2>Order List</h2>
                 <div id="order-list-container">
@@ -42,7 +43,8 @@
             </div>
         </div>
 
-<!-- Create Order Tab --><div class="tab-content" id="create-order">
+        <!-- Create Order Tab -->
+        <div class="tab-content" id="create-order">
             <div class="card">
                 <h2>Create New Order</h2>
                 <form id="create-order-form">
@@ -76,7 +78,8 @@
     </div>
 
     <script>
-// Tab switchingdocument.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
 
@@ -84,32 +87,37 @@
                 tab.addEventListener('click', () => {
                     const tabId = tab.getAttribute('data-tab');
 
-// Remove active class from all tabs
+                    // Remove active class from all tabs
                     tabs.forEach(t => t.classList.remove('active'));
                     tabContents.forEach(tc => tc.classList.remove('active'));
 
-// Add active class to clicked tab and corresponding content
+                    // Add active class to clicked tab and corresponding content
                     tab.classList.add('active');
                     document.getElementById(tabId).classList.add('active');
                 });
             });
 
-// Load order list initiallyfetchOrders();
+            // Load order list initially
+            fetchOrders();
 
-// Load users and products for the order formfetchUsersForSelect();
+            // Load users and products for the order form
+            fetchUsersForSelect();
             fetchProductsForSelect();
 
-// Create order form submissionconst createOrderForm = document.getElementById('create-order-form');
+            // Create order form submission
+            const createOrderForm = document.getElementById('create-order-form');
             createOrderForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 createOrder();
             });
 
-// Update price preview when product or quantity changesdocument.getElementById('product-select').addEventListener('change', updatePricePreview);
+            // Update price preview when product or quantity changes
+            document.getElementById('product-select').addEventListener('change', updatePricePreview);
             document.getElementById('quantity').addEventListener('input', updatePricePreview);
         });
 
-// Fetch orders from APIfunction fetchOrders() {
+        // Fetch orders from API
+        function fetchOrders() {
             const orderListContainer = document.getElementById('order-list-container');
             orderListContainer.innerHTML = '<p class="loading">Loading orders...</p>';
 
@@ -171,7 +179,8 @@
                 });
         }
 
-// View order detailsfunction viewOrderDetails(orderId) {
+        // View order details
+        function viewOrderDetails(orderId) {
             const detailCard = document.getElementById('order-detail-card');
             const detailContainer = document.getElementById('order-detail-container');
             detailContainer.innerHTML = '<p class="loading">Loading order details...</p>';
@@ -244,7 +253,8 @@
                 });
         }
 
-// Fetch users for select dropdownfunction fetchUsersForSelect() {
+        // Fetch users for select dropdown
+        function fetchUsersForSelect() {
             const userSelect = document.getElementById('user-select');
 
             fetch('/api/users')
@@ -272,10 +282,12 @@
                 });
         }
 
-// Fetch products for select dropdownfunction fetchProductsForSelect() {
+        // Fetch products for select dropdown
+        function fetchProductsForSelect() {
             const productSelect = document.getElementById('product-select');
 
-// Store product prices for later usewindow.productPrices = {};
+            // Store product prices for later use
+            window.productPrices = {};
 
             fetch('/api/products')
                 .then(response => {
@@ -291,7 +303,8 @@
                         option.textContent = `${product.name} (Rp ${parseFloat(product.price).toLocaleString('id-ID')})`;
                         productSelect.appendChild(option);
 
-// Store price for later usewindow.productPrices[product.id] = product.price;
+                        // Store price for later use
+                        window.productPrices[product.id] = product.price;
                     });
                 })
                 .catch(error => {
@@ -304,7 +317,8 @@
                 });
         }
 
-// Update price previewfunction updatePricePreview() {
+        // Update price preview
+        function updatePricePreview() {
             const productSelect = document.getElementById('product-select');
             const quantityInput = document.getElementById('quantity');
             const pricePreview = document.getElementById('price-preview');
@@ -326,7 +340,8 @@
             }
         }
 
-// Create a new orderfunction createOrder() {
+        // Create a new order
+        function createOrder() {
             const userIdSelect = document.getElementById('user-select');
             const productIdSelect = document.getElementById('product-select');
             const quantityInput = document.getElementById('quantity');
@@ -370,9 +385,11 @@
                 quantityInput.value = '1';
                 document.getElementById('price-preview').style.display = 'none';
 
-// Refresh order listfetchOrders();
+                // Refresh order list
+                fetchOrders();
 
-// Switch to order list tab after 2 secondssetTimeout(() => {
+                // Switch to order list tab after 2 seconds
+                setTimeout(() => {
                     document.querySelector('.tab[data-tab="order-list"]').click();
                 }, 2000);
             })
