@@ -1,0 +1,388 @@
+<!-- frontend/templates/orders.html --><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management - Service Integration System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Order Management</h1>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/users">Users</a></li>
+            <li><a href="/products">Products</a></li>
+            <li><a href="/orders">Orders</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="order-list">Order List</div>
+            <div class="tab" data-tab="create-order">Create Order</div>
+        </div>
+
+<!-- Order List Tab --><div class="tab-content active" id="order-list">
+            <div class="card">
+                <h2>Order List</h2>
+                <div id="order-list-container">
+                    <p class="loading">Loading orders...</p>
+                </div>
+            </div>
+
+            <div class="card" id="order-detail-card" style="display: none;">
+                <h2>Order Details</h2>
+                <div id="order-detail-container"></div>
+            </div>
+        </div>
+
+<!-- Create Order Tab --><div class="tab-content" id="create-order">
+            <div class="card">
+                <h2>Create New Order</h2>
+                <form id="create-order-form">
+                    <div class="form-group">
+                        <label for="user-select">Select User:</label>
+                        <select id="user-select" name="user_id" required>
+                            <option value="">-- Select a user --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-select">Select Product:</label>
+                        <select id="product-select" name="product_id" required>
+                            <option value="">-- Select a product --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity:</label>
+                        <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+                    </div>
+                    <div class="form-group" id="price-preview" style="display: none;">
+                        <label>Price per unit:</label>
+                        <p id="unit-price-display"></p>
+                        <label>Total price:</label>
+                        <p id="total-price-display"></p>
+                    </div>
+                    <button type="submit">Create Order</button>
+                </form>
+                <div id="create-order-message" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// Tab switchingdocument.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+
+// Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+
+// Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+// Load order list initiallyfetchOrders();
+
+// Load users and products for the order formfetchUsersForSelect();
+            fetchProductsForSelect();
+
+// Create order form submissionconst createOrderForm = document.getElementById('create-order-form');
+            createOrderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                createOrder();
+            });
+
+// Update price preview when product or quantity changesdocument.getElementById('product-select').addEventListener('change', updatePricePreview);
+            document.getElementById('quantity').addEventListener('input', updatePricePreview);
+        });
+
+// Fetch orders from APIfunction fetchOrders() {
+            const orderListContainer = document.getElementById('order-list-container');
+            orderListContainer.innerHTML = '<p class="loading">Loading orders...</p>';
+
+            fetch('/api/orders')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch orders');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.length === 0) {
+                        orderListContainer.innerHTML = '<p>No orders found. Create a new order to get started.</p>';
+                        return;
+                    }
+
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User ID</th>
+                                <th>Product ID</th>
+                                <th>Quantity</th>
+                                <th>Total Price</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-table-body">
+                        </tbody>
+                    `;
+
+                    orderListContainer.innerHTML = '';
+                    orderListContainer.appendChild(table);
+
+                    const tbody = document.getElementById('order-table-body');
+                    data.forEach(order => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${order.id}</td>
+                            <td>${order.user_id}</td>
+                            <td>${order.product_id}</td>
+                            <td>${order.quantity}</td>
+                            <td>Rp ${parseFloat(order.total_price).toLocaleString('id-ID')}</td>
+                            <td><span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></td>
+                            <td>
+                                <button class="action-btn" onclick="viewOrderDetails(${order.id})">View</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    orderListContainer.innerHTML = `
+                        <p class="error">Error: ${error.message}</p>
+                        <p>The Order Service may be offline. Please check your connection and try again.</p>
+                    `;
+                });
+        }
+
+// View order detailsfunction viewOrderDetails(orderId) {
+            const detailCard = document.getElementById('order-detail-card');
+            const detailContainer = document.getElementById('order-detail-container');
+            detailContainer.innerHTML = '<p class="loading">Loading order details...</p>';
+            detailCard.style.display = 'block';
+
+            fetch(`/api/orders/${orderId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch order details');
+                    }
+                    return response.json();
+                })
+                .then(order => {
+                    let userDetails = '';
+                    if (order.user_details && !order.user_details.error) {
+                        userDetails = `
+                            <div class="order-details">
+                                <h3>User Details</h3>
+                                <p><strong>ID:</strong> ${order.user_details.id}</p>
+                                <p><strong>Name:</strong> ${order.user_details.name}</p>
+                                <p><strong>Email:</strong> ${order.user_details.email}</p>
+                            </div>
+                        `;
+                    } else {
+                        userDetails = `
+                            <div class="order-details" style="border-left-color: #f44336;">
+                                <h3>User Details</h3>
+                                <p class="error">Could not retrieve user details</p>
+                            </div>
+                        `;
+                    }
+
+                    let productDetails = '';
+                    if (order.product_details && !order.product_details.error) {
+                        productDetails = `
+                            <div class="order-details">
+                                <h3>Product Details</h3>
+                                <p><strong>ID:</strong> ${order.product_details.id}</p>
+                                <p><strong>Name:</strong> ${order.product_details.name}</p>
+                                <p><strong>Price:</strong> Rp ${parseFloat(order.product_details.price).toLocaleString('id-ID')}</p>
+                            </div>
+                        `;
+                    } else {
+                        productDetails = `
+                            <div class="order-details" style="border-left-color: #f44336;">
+                                <h3>Product Details</h3>
+                                <p class="error">Could not retrieve product details</p>
+                            </div>
+                        `;
+                    }
+
+                    detailContainer.innerHTML = `
+                        <div>
+                            <p><strong>Order ID:</strong> ${order.id}</p>
+                            <p><strong>User ID:</strong> ${order.user_id}</p>
+                            <p><strong>Product ID:</strong> ${order.product_id}</p>
+                            <p><strong>Quantity:</strong> ${order.quantity}</p>
+                            <p><strong>Total Price:</strong> Rp ${parseFloat(order.total_price).toLocaleString('id-ID')}</p>
+                            <p><strong>Status:</strong> <span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></p>
+                        </div>
+                        ${userDetails}
+                        ${productDetails}
+                    `;
+                })
+                .catch(error => {
+                    detailContainer.innerHTML = `
+                        <p class="error">Error: ${error.message}</p>
+                        <p>Failed to retrieve order details.</p>
+                    `;
+                });
+        }
+
+// Fetch users for select dropdownfunction fetchUsersForSelect() {
+            const userSelect = document.getElementById('user-select');
+
+            fetch('/api/users')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch users');
+                    }
+                    return response.json();
+                })
+                .then(users => {
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.name} (${user.email})`;
+                        userSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Failed to load users';
+                    option.disabled = true;
+                    userSelect.innerHTML = '';
+                    userSelect.appendChild(option);
+                });
+        }
+
+// Fetch products for select dropdownfunction fetchProductsForSelect() {
+            const productSelect = document.getElementById('product-select');
+
+// Store product prices for later usewindow.productPrices = {};
+
+            fetch('/api/products')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch products');
+                    }
+                    return response.json();
+                })
+                .then(products => {
+                    products.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = `${product.name} (Rp ${parseFloat(product.price).toLocaleString('id-ID')})`;
+                        productSelect.appendChild(option);
+
+// Store price for later usewindow.productPrices[product.id] = product.price;
+                    });
+                })
+                .catch(error => {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Failed to load products';
+                    option.disabled = true;
+                    productSelect.innerHTML = '';
+                    productSelect.appendChild(option);
+                });
+        }
+
+// Update price previewfunction updatePricePreview() {
+            const productSelect = document.getElementById('product-select');
+            const quantityInput = document.getElementById('quantity');
+            const pricePreview = document.getElementById('price-preview');
+            const unitPriceDisplay = document.getElementById('unit-price-display');
+            const totalPriceDisplay = document.getElementById('total-price-display');
+
+            const productId = productSelect.value;
+            const quantity = parseInt(quantityInput.value) || 0;
+
+            if (productId && window.productPrices && window.productPrices[productId]) {
+                const unitPrice = parseFloat(window.productPrices[productId]);
+                const totalPrice = unitPrice * quantity;
+
+                unitPriceDisplay.textContent = `Rp ${unitPrice.toLocaleString('id-ID')}`;
+                totalPriceDisplay.textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
+                pricePreview.style.display = 'block';
+            } else {
+                pricePreview.style.display = 'none';
+            }
+        }
+
+// Create a new orderfunction createOrder() {
+            const userIdSelect = document.getElementById('user-select');
+            const productIdSelect = document.getElementById('product-select');
+            const quantityInput = document.getElementById('quantity');
+            const messageDiv = document.getElementById('create-order-message');
+
+            const orderData = {
+                user_id: parseInt(userIdSelect.value),
+                product_id: parseInt(productIdSelect.value),
+                quantity: parseInt(quantityInput.value)
+            };
+
+            messageDiv.innerHTML = '<p class="loading">Creating order...</p>';
+
+            fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to create order');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                messageDiv.innerHTML = `
+                    <p class="success">Order created successfully!</p>
+                    <p><strong>Order ID:</strong> ${data.id}</p>
+                    <p><strong>User ID:</strong> ${data.user_id}</p>
+                    <p><strong>Product ID:</strong> ${data.product_id}</p>
+                    <p><strong>Quantity:</strong> ${data.quantity}</p>
+                    <p><strong>Total Price:</strong> Rp ${parseFloat(data.total_price).toLocaleString('id-ID')}</p>
+                    <p><strong>Status:</strong> <span class="status-badge status-${data.status.toLowerCase()}">${data.status}</span></p>
+                `;
+                userIdSelect.value = '';
+                productIdSelect.value = '';
+                quantityInput.value = '1';
+                document.getElementById('price-preview').style.display = 'none';
+
+// Refresh order listfetchOrders();
+
+// Switch to order list tab after 2 secondssetTimeout(() => {
+                    document.querySelector('.tab[data-tab="order-list"]').click();
+                }, 2000);
+            })
+            .catch(error => {
+                messageDiv.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                    <p>Please try again.</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
