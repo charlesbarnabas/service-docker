@@ -4,8 +4,8 @@ version: '3.8'
 services:
   user_service:
     build:
-      context: . # <-- Ubah: Konteks adalah direktori root proyek
-      dockerfile: user_service/Dockerfile # <-- Tambah: Tentukan path Dockerfile
+      context: ./user_service
+      dockerfile: Dockerfile
     container_name: tutorial_user_service
     ports:
       - "5001:5001"
@@ -17,8 +17,8 @@ services:
 
   product_service:
     build:
-      context: . # <-- Ubah: Konteks adalah direktori root proyek
-      dockerfile: product_service/Dockerfile # <-- Tambah: Tentukan path Dockerfile
+      context: ./product_service
+      dockerfile: Dockerfile
     container_name: tutorial_product_service
     ports:
       - "5002:5002"
@@ -30,8 +30,8 @@ services:
 
   order_service:
     build:
-      context: . # <-- Ubah: Konteks adalah direktori root proyek
-      dockerfile: order_service/Dockerfile # <-- Tambah: Tentukan path Dockerfile
+      context: ./order_service
+      dockerfile: Dockerfile
     container_name: tutorial_order_service
     ports:
       - "5003:5003"
@@ -47,6 +47,25 @@ services:
       - product_service
     stop_signal: SIGINT
     restart: unless-stopped
+
+    frontend:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile
+      container_name: tutorial_frontend
+      ports:
+        - "5000:5000"
+      environment:
+        USER_SERVICE_URL: http://user_service:5001
+        PRODUCT_SERVICE_URL: http://product_service:5002
+        ORDER_SERVICE_URL: http://order_service:5003
+        FLASK_DEBUG: "1"
+      depends_on:
+        - user_service
+        - product_service
+        - order_service
+      stop_signal: SIGINT
+      restart: unless-stopped
 
 volumes:
   user_data:
